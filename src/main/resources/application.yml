@@ -1,0 +1,50 @@
+server:
+  port: 9999
+spring:
+  application:
+    name: shardDemo
+# 版本冲突出现datasource 已存在  ，一下配置允许覆盖
+    # 或更改版本springboot springcloud 版本解决
+#  main:
+#    allow-bean-definition-overriding: true
+sharding:
+  jdbc:
+    datasource:
+      names: ds0,ds1
+      ds0:
+        type: com.alibaba.druid.pool.DruidDataSource
+        url: jdbc:mysql://localhost:3306/db_log_0?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true&useSSL=true&serverTimezone=Asia/Shanghai
+        username: root
+        password: mysqladmin
+        driver-class-name: com.mysql.cj.jdbc.Driver
+      ds1:
+        type: com.alibaba.druid.pool.DruidDataSource
+        url: jdbc:mysql://localhost:3306/db_log_1?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true&useSSL=true&serverTimezone=Asia/Shanghai
+        username: root
+        password: mysqladmin
+        driver-class-name: com.mysql.cj.jdbc.Driver
+    config:
+      props:
+        sql.show: true
+      sharding:
+        default-data-source-name: ds0
+        tables:
+          user:
+            actual-data-nodes: ds$->{0..1}.user_$->{0..9}
+            database-strategy.inline:
+              sharding-column: id
+              algorithm-expression: ds$->{id % 2}
+            table-strategy.inline:
+              sharding-column: id
+              algorithm-expression: user_$->{id % 10}
+
+mybatis:
+  type-aliases-package: com.hx.vr.sharddemo.model
+  mapper-locations: classpath*:mapper/*.xml
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+pagehelper:
+  helper-dialect: mysql
+  reasonable: true
+  support-methods-arguments: true
+  params: count=countSql
